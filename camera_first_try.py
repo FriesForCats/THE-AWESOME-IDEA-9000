@@ -2,7 +2,7 @@ import cv2
 from time import sleep
 from matplotlib import pyplot as plt
 
-cap =cv2.VideoCapture(0)
+cap =cv2.VideoCapture(1)
 
 
 while True:
