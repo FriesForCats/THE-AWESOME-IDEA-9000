@@ -9,12 +9,30 @@ model_path = "res10_300x300_ssd_iter_140000.caffemodel"
 
 net = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
 
-cap =cv2.VideoCapture(0) # Set to 0 for built in webcam if 1 does not work
+cap  = cv2.VideoCapture(0) # Set to 0 for built in webcam if 1 does not work
+cap2 = cv2.VideoCapture(1)
+
 
 def videoPlay():
+    curcap = cap
+    prev_key = 'None'
     while True:
+        if cv2.waitKey(1) & 0xFF == ord(' '):
+            if prev_key != ' ':
+                if curcap == cap:
+                    curcap = cap2
+                    sleep(0.5)
+                else:
+                    curcap = cap
+                    sleep(0.5)
+                prev_key = ' '
+            
+        if cv2.waitKey(1) & 0xFF != ord(' '):
+            prev_key = 'None'
+            
+        
         #getting a frame from the camera
-        ret, frame = cap.read()
+        ret, frame = curcap.read()
 
         #makes sure the camera can be read
         if not ret:
@@ -66,5 +84,5 @@ def videoPlay():
             break
 
     #Releases camera and windows captured
-    cap.release()
+    curcap.release()
     cv2.destroyAllWindows()
