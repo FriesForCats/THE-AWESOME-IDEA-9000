@@ -66,14 +66,15 @@ def videoPlay():
         #Shows the image in a life feed
         cv2.imshow("feed",frame)
 
-        #Used to kill camera stream
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = cv2.waitKey(1) & 0xFF
+            #Used to kill camera stream
+        if key == ord('q'):
             break
-        if cv2.waitKey(1) & 0xFF == ord('\x1b'): # ESC key wworks to delete video feed
+        elif key == ord('\x1b'): # ESC key wworks to delete video feed
             break
-        if cv2.getWindowProperty("feed", cv2.WND_PROP_VISIBLE) < 1:
+        elif cv2.getWindowProperty("feed", cv2.WND_PROP_VISIBLE) < 1:
             break
-        if cv2.waitKey(1) & 0xFF == ord(' '):
+        elif key == ord(' '):
             if prev_key != ' ':
                 if curcap == cap:
                     curcap = cap2
@@ -82,8 +83,8 @@ def videoPlay():
                     curcap = cap
                     sleep(0.5)
                 prev_key = ' '
-            
-        if cv2.waitKey(1) & 0xFF != ord(' '):
+        
+        else:
             prev_key = 'None'
 
     #Releases camera and windows captured
