@@ -12,23 +12,14 @@ net = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
 cap  = cv2.VideoCapture(0) # Set to 0 for built in webcam if 1 does not work
 cap2 = cv2.VideoCapture(1)
 
+has_cap = cap.isOpened()
+has_cap2 = cap2.isOpened()
 
 def videoPlay():
-    curcap = cap
+    curcap = cap if has_cap else cap2
     prev_key = 'None'
     while True:
-        if cv2.waitKey(1) & 0xFF == ord(' '):
-            if prev_key != ' ':
-                if curcap == cap:
-                    curcap = cap2
-                    sleep(0.5)
-                else:
-                    curcap = cap
-                    sleep(0.5)
-                prev_key = ' '
-            
-        if cv2.waitKey(1) & 0xFF != ord(' '):
-            prev_key = 'None'
+        
             
         
         #getting a frame from the camera
@@ -82,6 +73,18 @@ def videoPlay():
             break
         if cv2.getWindowProperty("feed", cv2.WND_PROP_VISIBLE) < 1:
             break
+        if cv2.waitKey(1) & 0xFF == ord(' '):
+            if prev_key != ' ':
+                if curcap == cap:
+                    curcap = cap2
+                    sleep(0.5)
+                else:
+                    curcap = cap
+                    sleep(0.5)
+                prev_key = ' '
+            
+        if cv2.waitKey(1) & 0xFF != ord(' '):
+            prev_key = 'None'
 
     #Releases camera and windows captured
     curcap.release()
