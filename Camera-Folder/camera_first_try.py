@@ -5,19 +5,24 @@ import numpy as np
 
 
 prototxt_path = "deploy.prototxt"
-model_path = "res10_300x300_ssd_iter_140000.caffemodel"
+model_path = "res10_300x300_ssd_iter_140000.caffemodel" # Model used for detection human faces
 
 net = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
 
-cap  = cv2.VideoCapture(0) # Set to 0 for built in webcam if 1 does not work
+cap  = cv2.VideoCapture(0) 
 cap2 = cv2.VideoCapture(1)
 
+# checks to see if captures work
 has_cap = cap.isOpened()
 has_cap2 = cap2.isOpened()
 
 def videoPlay():
-    curcap = cap if has_cap else cap2
-    prev_key = 'None'
+    
+    curcap = cap if has_cap else cap2 # checks to see if more than one video feed exists
+    prev_key = 'None' # Defaults the previous key stroke to None
+    cap_width = 800 # Default width of video feed
+    
+    
     while True:
         
             
@@ -63,17 +68,26 @@ def videoPlay():
                 cv2.putText(frame, text, (startX, startY - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
                 
-        #Shows the image in a life feed
-        cv2.imshow("feed",frame)
+        # Resizes live feed to match a given width, allowing for simillar sizes in the case of two webcams
+        h, w = frame.shape[:2]
+        ratio = cap_width / float(w)
+        cap_height = int(h * ratio)
+        shown_frame = cv2.resize(frame, (cap_width, cap_height))
+        
+        #Shows the image in a live feed
+        cv2.imshow("feed",shown_frame)
 
         key = cv2.waitKey(1) & 0xFF
-            #Used to kill camera stream
+        
+        # Several inputs used to kill camera stream
         if key == ord('q'):
             break
-        elif key == ord('\x1b'): # ESC key wworks to delete video feed
+        elif key == ord('\x1b'):
             break
         elif cv2.getWindowProperty("feed", cv2.WND_PROP_VISIBLE) < 1:
             break
+        
+        # Input to switch video feed
         elif key == ord(' '):
             if prev_key != ' ':
                 if curcap == cap:
@@ -83,10 +97,22 @@ def videoPlay():
                     curcap = cap
                     sleep(0.5)
                 prev_key = ' '
+                
+        # Increase or decrease screen size
+        elif key == ord('=') or key == ord('+'):
+            cap_width += 50
+        elif key == ord('-') or key == ord('_'):
+            cap_width -= 50
         
+        # bug fix for switching camera
         else:
             prev_key = 'None'
 
     #Releases camera and windows captured
     curcap.release()
     cv2.destroyAllWindows()
+
+
+# Only executed when this file is run, used for bug fixing with the video feed              (and for when I accidently run this file instead of main)
+if __name__ == "__main__":
+    videoPlay()
