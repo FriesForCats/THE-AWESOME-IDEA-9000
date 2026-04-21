@@ -4,9 +4,11 @@ from time import sleep
 # import numpy as np
 # from ultralytics import YOLO
 import torch
-
+import math 
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='Camera-Folder/detection.pt')
 
+model.conf = 0.4  # Set confidence threshold to 60%
+model.IOU = 0.45  # 
 
 cap  = cv2.VideoCapture(0) 
 cap2 = cv2.VideoCapture(1)
@@ -36,6 +38,7 @@ def videoPlay():
         
         #gets the height and width of the camera feed for later
         h, w = frame.shape[:2]
+        
         
         # # Pre-process: create a 300x300 blob 
         # blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,(300, 300), (104.0, 177.0, 123.0))
@@ -83,6 +86,50 @@ def videoPlay():
                 int((cls * 17) % 255),
                 int((cls * 29) % 255)
             )           
+            # Get detections as a numpy array
+        detections = results.xyxy[0].cpu().numpy()
+        
+        for i in range(len(detections)):
+            for j in range(i + 1, len(detections)):
+                # Data for first object
+                x1_a, y1_a, x2_a, y2_a, conf_a, cls_a = detections[i]
+                name_a = model.names[int(cls_a)]
+                
+                # Data for second object
+                x1_b, y1_b, x2_b, y2_b, conf_b, cls_b = detections[j]
+                name_b = model.names[int(cls_b)]
+
+                # Initialize variables to identify who is the person and who is the item
+                person_box = None
+                item_box = None
+
+                # Check if one is a person and the other is NOT a person
+                if name_a == "person" and name_b != "person":
+                    person_box = (x1_a, y1_a, x2_a, y2_a)
+                    item_box = (x1_b, y1_b, x2_b, y2_b)
+                    item_name = name_b
+                elif name_b == "person" and name_a != "person":
+                    person_box = (x1_b, y1_b, x2_b, y2_b)
+                    item_box = (x1_a, y1_a, x2_a, y2_a)
+                    item_name = name_a
+
+                # If we found a Person + Item pair, check for containment
+                if person_box and item_box:
+                    px1, py1, px2, py2 = person_box
+                    ix1, iy1, ix2, iy2 = item_box
+
+                    # STRICT LOGIC: All edges of the item must be inside the person's edges
+                    is_inside = (ix1 >= px1 and iy1 >= py1 and 
+                                 ix2 <= px2 and iy2 <= py2)
+
+                    if is_inside:
+                        status = f"HELD/CONTAINED: {item_name.upper()}"
+                        color = (0, 255, 0) # Green for "Success/Inside"
+                        
+                        # Visual notification
+                        cv2.rectangle(img, (int(px1), int(py1)), (int(px2), int(py2)), color, 2)
+                        cv2.rectangle(img, (int(ix1), int(iy1)), (int(ix2), int(iy2)), color, 4)
+                        cv2.putText(img, status, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3)
             
             # displays box and label on screen
             cv2.rectangle(img, (x1, y1), (x2, y2), (color), 2)
