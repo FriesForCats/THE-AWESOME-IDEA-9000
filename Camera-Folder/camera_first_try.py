@@ -1,13 +1,12 @@
 import cv2
 from time import sleep
-from matplotlib import pyplot as plt
-import numpy as np
+# from matplotlib import pyplot as plt
+# import numpy as np
+# from ultralytics import YOLO
+import torch
 
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='Camera-Folder/detection.pt')
 
-prototxt_path = "deploy.prototxt"
-model_path = "res10_300x300_ssd_iter_140000.caffemodel" # Model used for detection human faces
-
-net = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
 
 cap  = cv2.VideoCapture(0) 
 cap2 = cv2.VideoCapture(1)
@@ -22,13 +21,13 @@ def videoPlay():
     prev_key = 'None' # Defaults the previous key stroke to None
     cap_width = 800 # Default width of video feed
     
-    
     while True:
         
             
         
         #getting a frame from the camera
         ret, frame = curcap.read()
+        
 
         #makes sure the camera can be read
         if not ret:
@@ -38,36 +37,59 @@ def videoPlay():
         #gets the height and width of the camera feed for later
         h, w = frame.shape[:2]
         
-        # Pre-process: create a 300x300 blob 
-        blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,(300, 300), (104.0, 177.0, 123.0))
-        "This line ^ shrinks the image into a 300 x 300 square "
-        "and then scales it to stay 300 x 300p "
-        "and finally takes all the color out"
+        # # Pre-process: create a 300x300 blob 
+        # blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,(300, 300), (104.0, 177.0, 123.0))
+        # "This line ^ shrinks the image into a 300 x 300 square "
+        # "and then scales it to stay 300 x 300p "
+        # "and finally takes all the color out"
     
-        # Run detection
-        net.setInput(blob)
-        detections = net.forward()
+        # # Run detection
+        # net.setInput(blob)
+        # detections = net.forward()
 
-        # Loop over detections
-        for i in range(0, detections.shape[2]):
-            confidence = detections[0, 0, i, 2]
+        # # Loop over detections
+        # for i in range(0, detections.shape[2]):
+        #     confidence = detections[0, 0, i, 2]
 
-            # Filter out weak detections (< 50% confidence)
-            if confidence > 0.5:
-                # Scale coordinates back to original frame size 
-                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                (startX, startY, endX, endY) = box.astype("int")
+        #     # Filter out weak detections (< 50% confidence)
+        #     if confidence > 0.5:
+        #         # Scale coordinates back to original frame size 
+        #         box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+        #         (startX, startY, endX, endY) = box.astype("int")
 
 
-                # Converts the confidence of the face into a percent
-                text = f"{confidence * 100:.2f}%"
+        #         # Converts the confidence of the face into a percent
+        #         text = f"{confidence * 100:.2f}%"
                 
-                # Box drawing
-                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-                # Percent Drawing
-                cv2.putText(frame, text, (startX, startY - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
-                
+        #         # Box drawing
+        #         cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
+        #         # Percent Drawing
+        #         cv2.putText(frame, text, (startX, startY - 10),
+        #                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
+        
+        
+        results = model(frame, size=416) # shrinks image for ai to 
+        
+        img = frame.copy()
+        
+        # manually draws box for better control and speed
+        for *box, conf, cls in results.xyxy[0]: # 
+            x1, y1, x2, y2 = map(int, box) # cords of box corners
+            label = f"{model.names[int(cls)]} {conf:.2f}" # draws label with class and confidence
+            
+            # gives different but distinct colors to the boxes and labels 
+            color = (
+                int((cls * 37) % 255), 
+                int((cls * 17) % 255),
+                int((cls * 29) % 255)
+            )           
+            
+            # displays box and label on screen
+            cv2.rectangle(img, (x1, y1), (x2, y2), (color), 2)
+            cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (color), 2)
+
+        frame = img
+           
         # Resizes live feed to match a given width, allowing for simillar sizes in the case of two webcams
         h, w = frame.shape[:2]
         ratio = cap_width / float(w)
