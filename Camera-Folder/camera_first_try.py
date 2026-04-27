@@ -3,10 +3,15 @@ import torch
 import mysql.connector
 import sys
 import warnings
-from time import sleep
+import time
 
 # 1. SETUP & SUPPRESS WARNINGS
 warnings.filterwarnings("ignore", category=FutureWarning)
+last_logged_time = {} 
+LOG_COOLDOWN = 10
+
+
+
 
 # 2. DATABASE CONNECTION (Keep this outside the loop for speed!)
 try:
@@ -27,6 +32,7 @@ except mysql.connector.Error as err:
 # Using 'cuda' if you have an NVIDIA GPU, otherwise 'cpu'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='Camera-Folder/detection.pt', device=device)
+model.classes = [0, 24,39,41,46,47,49,55,54, ]
 model.conf = 0.4 
 model.iou = 0.3 # Lowered slightly to help detect overlapping objects
 
@@ -86,6 +92,7 @@ def videoPlay():
 
                     if is_inside:
                         item_name = model.names[int(item[5])]
+                        current_time = time.time()
                         print(f"Item: {item_name} grabbed!")
                         
                         # Visual notification
@@ -93,13 +100,17 @@ def videoPlay():
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
                         # LOG TO DATABASE
-                        try:
-                            sql = "INSERT INTO detection_logs (label, confidence, status) VALUES (%s, %s, %s)"
-                            cursor.execute(sql, (item_name, float(item[4]), "HELD"))
-                            db.commit()
-                        except mysql.connector.Error as e:
-                            print(f"Logging error: {e}")
-
+                        if item_name not in last_logged_time or (current_time - last_logged_time[item_name] > LOG_COOLDOWN):
+                            try:
+                                sql = "INSERT INTO detection_logs (label, confidence, status) VALUES (%s, %s, %s)"
+                                cursor.execute(sql, (item_name, float(item[4]), "HELD"))
+                                db.commit()
+                                
+                                # Update the timestamp
+                                last_logged_time[item_name] = current_time
+                                print(f"Database Updated: {item_name}")
+                            except mysql.connector.Error as e:
+                                print(f"Logging error: {e}")
         # Resize and Show
         h, w = img.shape[:2]
         ratio = cap_width / float(w)
@@ -112,8 +123,12 @@ def videoPlay():
             break
         elif key == ord(' '): # Switch Camera
             curcap = cap2 if curcap == cap else cap
-            sleep(0.5)
-
+            time.sleep(0.5)
+        # Increase or decrease screen size
+        elif key == ord('=') or key == ord('+'):
+            cap_width += 50
+        elif key == ord('-') or key == ord('_'):
+            cap_width -= 50
     curcap.release()
     cv2.destroyAllWindows()
 
