@@ -32,9 +32,23 @@ except mysql.connector.Error as err:
 # Using 'cuda' if you have an NVIDIA GPU, otherwise 'cpu'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='Camera-Folder/detection.pt', device=device)
-model.classes = [0, 24,39,41,46,47,49,55,54, ]
+model.classes = [0, 24,39,41,46,47,49,54,55] # [person,  backpack, bottle, cup, banana, apple, orange, donut, cake]
 model.conf = 0.4 
 model.iou = 0.3 # Lowered slightly to help detect overlapping objects
+
+# 3.5 COLOR MAP
+color_map = {
+    0  :  (255, 0, 0),     # Person:   Blue (stands out vs everything)
+  
+    24 :  (255, 255, 255), # Backpack: Black
+    39 :  (255, 255, 0),   # Bottle:   Cyan
+    41 :  (0, 0, 0),       # Cup:      White
+    46 :  (0, 255, 255),   # Banana:   Yellow
+    47 :  (0, 0, 255),     # Apple:    Red
+    49 :  (0, 165, 255),   # Orange:   Orange
+    54 :  (19, 69, 139),   # Donut:    Brown 
+    55 :  (203, 192, 255), # Cake:     Pink
+}
 
 # 4. CAMERA SETUP
 cap = cv2.VideoCapture(0)
@@ -56,13 +70,14 @@ def videoPlay():
         results = model(frame, size=320)
         img = frame.copy()
         detections = results.xyxy[0].cpu().numpy()
+        
 
         # --- STEP A: DRAW ALL OBJECTS FIRST ---
         # This ensures you see everything the AI sees
         for det in detections:
             x1, y1, x2, y2, conf, cls = det
             label = f"{model.names[int(cls)]} {conf:.2f}"
-            color = (255, 255, 0) # Cyan for general detections
+            color = color_map[cls] # Cyan for general detections
             
             cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
             cv2.putText(img, label, (int(x1), int(y1) - 10), 
