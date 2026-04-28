@@ -32,11 +32,11 @@ except mysql.connector.Error as err:
 # Using 'cuda' if you have an NVIDIA GPU, otherwise 'cpu'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='Camera-Folder/detection.pt', device=device)
-model.classes = [0, 24,39,41,46,47,49,54,55] # [person,  backpack, bottle, cup, banana, apple, orange, donut, cake]
+model.classes = [0,  24, 39, 41, 46, 47, 49, 54, 55] # [person,  backpack, bottle, cup, banana, apple, orange, donut, cake]
 model.conf = 0.4 
 model.iou = 0.3 # Lowered slightly to help detect overlapping objects
 
-# 3.5 COLOR MAP
+# 3.5 COLOR MAP AND OTHER VARIABLES
 color_map = {
     0  :  (255, 0, 0),     # Person:   Blue (stands out vs everything)
   
@@ -90,7 +90,8 @@ def videoPlay():
                 name1, name2 = model.names[int(d1[5])], model.names[int(d2[5])]
 
                 person = None
-                item = None
+                item = None 
+                held_items = []
 
                 # Logic to identify Person vs Item
                 if name1 == "person" and name2 != "person":
@@ -106,9 +107,10 @@ def videoPlay():
                     is_inside = (ix1 >= px1 and iy1 >= py1 and ix2 <= px2 and iy2 <= py2)
 
                     if is_inside:
+                        held_items.append(model.names[int(item[5])])
                         item_name = model.names[int(item[5])]
                         current_time = time.time()
-                        print(f"Item: {item_name} grabbed!")
+                        print(f"Cart: {held_items}.")
                         
                         # Visual notification
                         cv2.putText(img, f"HELD: {item_name.upper()}", (20, 50), 
