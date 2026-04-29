@@ -7,7 +7,7 @@ import camera_setup
 
 camera_setup.setup()
 
-import camera_first_try
+import camera_second_try
 
 if camera_setup.use_cameras:
-    camera_first_try.videoPlay()
+    camera_second_try.videoPlay()

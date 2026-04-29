@@ -60,11 +60,25 @@ def videoPlay():
             print("Error: Failed to capture image.")
             break
         
-        detect()
+        img = frame.copy()
+    
+        detections = detect(model, frame)
         
-        display()
+        img = draw(img, detections, model, color_map)
+        
+        held_items = check_pairs(detections, model)
+        
+        log_items(held_items, cursor, db, last_logged_time, LOG_COOLDOWN)
+        
+        
+        h, w = img.shape[:2]
+        ratio = cap_width / float(w)
+        shown_frame = cv2.resize(img, (cap_width, int(h * ratio)))
+        cv2.imshow("feed", shown_frame)
+        
         
         key = cv2.waitKey(1) & 0xFF
+        
         if key == ord('q') or cv2.getWindowProperty("feed", cv2.WND_PROP_VISIBLE) < 1:
             break
         elif key == ord(' '): # Switch Camera
@@ -75,36 +89,90 @@ def videoPlay():
             time.sleep(0.5)
         # Increase or decrease screen size
         elif key == ord('=') or key == ord('+'):
-            cap_width += 50
+            cap_width+=50
         elif key == ord('-') or key == ord('_'):
-            cap_width -= 50
+            cap_width-=50
+        
+        #cv2.imshow("feed", frame)
     curcap.release()
     cv2.destroyAllWindows()
         
 
-def detect():
+def detect(model, frame):
     """detects images yadayada"""
-    pass
+    results = model(frame, size=256) # lower size for faster speed
+    detections = results.xyxy[0].cpu().numpy()
+    return detections
 
 
-def draw():
+def draw(img, detections, model, colors):
     """draws images yadayada"""
-    pass
+    for det in detections:
+        x1, y1, x2, y2, conf, cls = det
+        label = f"{model.names[int(cls)]} {conf:.2f}"
+        color = color_map[cls]
+        
+        cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
+        cv2.putText(img, label, (int(x1), int(y1) - 10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    
+    return img
 
 
-def check_pairs():
+def check_pairs(detections, model):
     """checks pairs yadayada"""
-    pass
+    held_items = []
+
+    for i in range(len(detections)):
+        for j in range(i + 1, len(detections)):
+            d1, d2 = detections[i], detections[j]
+            name1, name2 = model.names[int(d1[5])], model.names[int(d2[5])]
+
+            person, item = None, None
+
+            if name1 == "person" and name2 != "person":
+                person, item = d1, d2
+            elif name2 == "person" and name1 != "person":
+                person, item = d2, d1
+
+            if person is not None and item is not None:
+                px1, py1, px2, py2 = person[:4]
+                ix1, iy1, ix2, iy2 = item[:4]
+
+                is_inside = (ix1 >= px1 and iy1 >= py1 and ix2 <= px2 and iy2 <= py2)
+
+                if is_inside:
+                    item_name = model.names[int(item[5])]
+                    held_items.append((item_name, item))
+
+    return held_items
 
 
-def log():
-    """logs database or something"""
-    pass
+def log_items(held_items, cursor, db, last_logged_time, LOG_COOLDOWN):
+    """logs items into database"""
+    current_time = time.time()
+
+    for item_name, item in held_items:
+        print(f"Cart: {item_name}")
+
+        if item_name not in last_logged_time or (current_time - last_logged_time[item_name] > LOG_COOLDOWN):
+            try:
+                sql = "INSERT INTO detection_logs (label, confidence, status) VALUES (%s, %s, %s)"
+                cursor.execute(sql, (item_name, float(item[4]), "HELD"))
+                db.commit()
+
+                last_logged_time[item_name] = current_time
+                print(f"Database Updated: {item_name}")
+            except mysql.connector.Error as e:
+                print(f"Logging error: {e}")
 
 
-def display():
-    """displays the window with detection"""
-    pass
+def resize(img, cap_width):
+        h, w = img.shape[:2]
+        ratio = cap_width / float(w)
+        frame = cv2.resize(img, (cap_width, int(h * ratio)))
+        
+        return frame
 
 
 
