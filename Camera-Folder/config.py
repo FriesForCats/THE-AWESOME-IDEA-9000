@@ -18,4 +18,13 @@ db = SQLAlchemy(app)
 class Testing(db.Model):
     """
     The database model but represented as a modifiable class
-    """
+   """
+    id = db.Column(db.Integer, primary_key=True)
+
+    def to_json(self):
+        return {
+           "id": self.id 
+        }
+
+
+
