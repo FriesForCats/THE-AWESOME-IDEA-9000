@@ -1,25 +1,44 @@
 import './App.css';
 import Camera from './components/Camera.js'
-import Accordion from './components/Shoppers_List.js';
+import InventoryHeader from './components/Inventory-Header.js';
+import InventoryList from './components/Inventory.js';
+import Shoppers from './components/Shoppers_List.js';
+import ArmingHeader from './components/Arming-Header.js';
+import ArmingButton from './components/Arming-Button.js';
 
 function App() {
   return (
     <div className="App">
       <div className = "Camera">
         <Camera/>
-        <button className= 'Change-Camera'>
+        <button 
+        className= 'Change-Camera'
+        style= {{
+          backgroundColor : "black",
+          color : "white"
+        }}
+        >
           Change Cameras
         </button>
       </div>
       <div className = "Current-Shoppers">
-        <Accordion/>
+        <Shoppers/>
       </div>
-      <div className = "Arming-Button">
-        This is where the toggle to arm the system will be
-        </div>
       <div className = "Inventory-List">
-        This is where the actively updating inventory will be
+        <InventoryHeader/>
+        <InventoryList/>
         </div>
+      <div className = "Arming-Button">
+        <ArmingHeader/>
+        <div
+        style= {{
+          padding : "20px"
+        }}
+        >
+          Green = Armed Red = Disarmed
+        </div>
+        <ArmingButton/>
+      </div>
     </div>
   );
 }
