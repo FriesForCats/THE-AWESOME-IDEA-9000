@@ -132,6 +132,7 @@ def videoPlay():
         h, w = img.shape[:2]
         ratio = cap_width / float(w)
         shown_frame = cv2.resize(img, (cap_width, int(h * ratio)))
+        
         cv2.imshow("feed", shown_frame)
 
         # Handle Inputs
