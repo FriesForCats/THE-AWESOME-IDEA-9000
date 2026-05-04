@@ -1,4 +1,3 @@
-#booring
 import sys
 import subprocess
 import os
@@ -30,3 +29,4 @@ camera_setup.setup()
 import camera_second_try
 if camera_setup.use_cameras:
     camera_second_try.videoPlay()
+    
