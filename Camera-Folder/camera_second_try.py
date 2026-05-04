@@ -182,7 +182,7 @@ def log_items(held_items, returned, cursor, db, last_logged_time, LOG_COOLDOWN):
                 sql2 = "UPDATE inventory SET amount = amount + %s WHERE label = %s"
                 cursor.execute(sql2, (1, item_name))
                 
-                db.commit
+                db.commit()
                 
                     
         except mysql.connector.Error as e:
