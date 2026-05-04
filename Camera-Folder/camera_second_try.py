@@ -177,7 +177,7 @@ def log_items(held_items, returned, cursor, db, last_logged_time, LOG_COOLDOWN):
             
             if exists:
                 sql1 = "DELETE FROM inventory WHERE label = %s LIMIT 1"
-                cursor.execute(sql1, (item_name))
+                cursor.execute(sql1, (item_name,))
                 
                 sql2 = "UPDATE inventory SET amount = amount + %s WHERE label = %s"
                 cursor.execute(sql2, (1, item_name))
