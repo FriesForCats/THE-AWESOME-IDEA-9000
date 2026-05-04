@@ -1,0 +1,24 @@
+# --- Specific Project Files ---
+detection.pt
+Camera-Folder/detection.pt
+
+# --- Python / Byte-compiled ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Environments ---
+.venv/
+venv/
+env/
+bin/
+obj/
+
+# --- IDEs / Editors ---
+.vscode/
+.idea/
+*.swp
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
