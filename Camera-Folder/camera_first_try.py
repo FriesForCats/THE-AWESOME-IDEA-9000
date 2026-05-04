@@ -31,7 +31,7 @@ except mysql.connector.Error as err:
 # 3. LOAD MODEL
 # Using 'cuda' if you have an NVIDIA GPU, otherwise 'cpu'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='detection.pt', device=device)
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='Camera-Folder/detection.pt', device=device)
 model.classes = [0,  24, 39, 41, 46, 47, 49, 54, 55] # [person,  backpack, bottle, cup, banana, apple, orange, donut, cake]
 model.conf = 0.4 
 model.iou = 0.3 # Lowered slightly to help detect overlapping objects
