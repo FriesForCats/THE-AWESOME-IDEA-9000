@@ -1,4 +1,3 @@
-#booring
 import sys
 import subprocess
 import os
@@ -21,12 +20,14 @@ time.sleep(10)
 
 # 4. Existing logic
 sys.path.append("Camera-Folder")
+import inventory_setup
 import camera_setup
 
 # Since camera_setup has an input(), the terminal will pause here
 # after the 5-second delay.
-camera_setup.setup()
+#camera_setup.setup()
 
 import camera_second_try
 if camera_setup.use_cameras:
     camera_second_try.videoPlay()
+    
