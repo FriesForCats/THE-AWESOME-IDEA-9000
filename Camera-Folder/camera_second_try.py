@@ -124,8 +124,8 @@ def check_pairs(detections, model):
             px1, py1, px2, py2 = person[:4]
             ix1, iy1, ix2, iy2 = item[:4]
 
-            is_inside = (ix1 >= px1 and iy1 >= py1 and ix2 <= px2 and iy2 <= py2)
-
+            cx, cy = (ix1 + ix2) / 2, (iy1 + iy2) / 2
+            is_inside = px1 <= cx <= px2 and py1 <= cy <= py2:
             if is_inside:
                 item_name = model.names[int(item[5])]
                 held_items.append((item_name, item))
