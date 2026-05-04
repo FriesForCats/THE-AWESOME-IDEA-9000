@@ -17,7 +17,7 @@ subprocess.Popen([sys.executable, config_path])
 # 3. Add the delay here
 # This gives the background processes time to breathe
 print("Waiting 5 seconds for systems to initialize...")
-time.sleep(5) 
+time.sleep(10) 
 
 # 4. Existing logic
 sys.path.append("Camera-Folder")
