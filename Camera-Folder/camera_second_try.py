@@ -29,7 +29,7 @@ except mysql.connector.Error as err:
     
 # LOAD MODEL
 device = 'cuda' if torch.cuda.is_available() else 'cpu' # Using 'cuda' if you have an NVIDIA GPU, otherwise 'cpu'
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='Camera-Folder/detection.pt', device=device) # V5 yolo model 
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='detection.pt', device=device) # V5 yolo model 
 model.classes = [0, 24,39,41,46,47,49,54,55] # [person,  backpack, bottle, cup, banana, apple, orange, donut, cake]
 model.conf = 0.6 # confidence
 model.iou = 0.3 # intersection over union

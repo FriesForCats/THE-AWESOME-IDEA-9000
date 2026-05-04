@@ -30,9 +30,9 @@ class Testing(db.Model):
 @app.route('/logs', methods=['GET'])
 def get_logs():
     try:
-        # Queries the database for all logs
-        logs = Testing.query.all()
-        # Converts the list of objects into JSON
+        # Sort by id descending and take only the 10 most recent
+        logs = Testing.query.order_by(Testing.id.desc()).limit(3).all()
+        
         return jsonify([{
             "id": log.id,
             "label": log.label,
