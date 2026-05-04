@@ -35,3 +35,5 @@ def setup():
     else:
         print(f"{len(caps)} cameras instantiated!")
         print("Continuing to database connection!")
+
+setup()

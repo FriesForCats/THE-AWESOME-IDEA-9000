@@ -18,42 +18,56 @@ except mysql.connector.Error as err:
     print(f"Database Connection Error: {err}")
     sys.exit()
     
-num_labels = input("How many different items are available in store? ")
+cursor.execute("SELECT COUNT(*) FROM inventory")
+count = cursor.fetchone()[0]
 
-labels = []
-amounts = []
-inventory = []
+def inv_setup(count):
 
-for label in range(num_labels):
-    labels[label] = input(f"What is item {label}? ")
-    amounts[label] = input(f"How many {labels[label]}s are available? ")
-    
-for i in range(num_labels):
-    inventory.append((label[i], amounts[i]))
-    
-
-print("Your store has:")
-
-for i in range(num_labels):
-    if amounts[i] == 1:
-            print(f"1 {labels[i]}")
-    else:
-            print(f"{amounts[i]} {labels[i]}s")
-            
-check = input("Are these values correct? [Y/N] ")
-
-if check.lower() == 'y':
-    
-    for label, amount in inventory:
-
-        try:
-            sql = "INSERT INTO inventory (label, amount ) VALUES (%s, %s)"
-            cursor.execute(sql, (item_name, float(item[4]), "HELD"))
+    if count != 0:
+        to_delete = input("Would you like to use previous data?[Y/N] ")
+        if to_delete.lower() == 'n':
+            print("Removing previous item labels and amounts...")
+            cursor.execute("TRUNCATE TABLE inventory")
             db.commit()
+            count = 0
+            
+    if count == 0:        
+        
+        num_labels = int(input("How many different items are available in store? "))
 
-            last_logged_time[item_name] = current_time
-            print(f"Database Updated: {item_name}")
-        except mysql.connector.Error as e:
-            print(f"Logging error: {e}")
+        labels = []
+        amounts = []
+        inventory = []
+
+        for i in range(num_labels):
+            labels.append(input(f"What is item {i+1}? "))
+            amounts.append(input(f"How many {labels[i]}s are available? "))
+            
+        for i in range(num_labels):
+            inventory.append((labels[i], amounts[i]))
+            
+
+        print("Your store has:")
+
+        for i in range(num_labels):
+            if amounts[i] == 1:
+                    print(f"1 {labels[i]}")
+            else:
+                    print(f"{amounts[i]} {labels[i]}s")
                     
-    
+        check = input("Are these values correct? [Y/N] ")
+
+        if check.lower() == 'y':
+            try:
+                sql = "INSERT INTO inventory (label, amount ) VALUES (%s, %s)"
+                cursor.executemany(sql, inventory)
+                db.commit()
+                
+            except mysql.connector.Error as e:
+                print(f"Logging error: {e}")
+        else: 
+            inv_setup(0)
+            
+inv_setup(count)
+                
+

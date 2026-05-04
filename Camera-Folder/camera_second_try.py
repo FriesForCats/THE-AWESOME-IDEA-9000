@@ -56,6 +56,7 @@ def videoPlay():
     curcap = caps[i]
     cap_width = 800
     use_cameras = True
+    held_items = []
     
     while use_cameras == True:
         ret, frame = curcap.read()
@@ -67,11 +68,11 @@ def videoPlay():
     
         detections = detect(model, frame)
         
-        held_items = check_pairs(detections, model)
+        held_items, returned = check_pairs(detections, model, held_items)
         
         img = draw(img, detections, model, color_map, held_items)
         
-        log_items(held_items, cursor, db, last_logged_time, LOG_COOLDOWN)
+        log_items(held_items, returned, cursor, db, last_logged_time, LOG_COOLDOWN)
         
             
         img = resize(img, cap_width)
@@ -112,9 +113,10 @@ def draw(img, detections, model, colors, held_items):
     return img
 
 
-def check_pairs(detections, model):
+def check_pairs(detections, model, prev_held):
     """checks pairs yadayada"""
     held_items = []
+    returned = []
     persons = [d for d in detections if model.names[int(d[5])] == "person"]
     items   = [d for d in detections if model.names[int(d[5])] != "person"]
 
@@ -124,16 +126,20 @@ def check_pairs(detections, model):
             px1, py1, px2, py2 = person[:4]
             ix1, iy1, ix2, iy2 = item[:4]
 
-            is_inside = (ix1 >= px1 and iy1 >= py1 and ix2 <= px2 and iy2 <= py2)
-
+            cx, cy = (ix1 + ix2) / 2, (iy1 + iy2) / 2
+            is_inside = px1 <= cx <= px2 and py1 <= cy <= py2
             if is_inside:
                 item_name = model.names[int(item[5])]
                 held_items.append((item_name, item))
+    
+    for item_name, item in prev_held:
+        if item_name not in held_items:
+            returned.append((item_name, item,))
 
-    return held_items
+    return held_items, returned
 
 
-def log_items(held_items, cursor, db, last_logged_time, LOG_COOLDOWN):
+def log_items(held_items, returned, cursor, db, last_logged_time, LOG_COOLDOWN):
     """logs items into database"""
     current_time = time.time()
 
@@ -142,14 +148,46 @@ def log_items(held_items, cursor, db, last_logged_time, LOG_COOLDOWN):
 
         if item_name not in last_logged_time or (current_time - last_logged_time[item_name] > LOG_COOLDOWN):
             try:
-                sql = "INSERT INTO detection_logs (label, confidence, status) VALUES (%s, %s, %s)"
-                cursor.execute(sql, (item_name, float(item[4]), "HELD"))
-                db.commit()
+                cursor.execute("SELECT amount FROM inventory WHERE label = %s", (item_name,))
+                exists = cursor.fetchone()
+                
+                if exists:
+                    sql1 = "INSERT INTO detection_logs (label, confidence, status) VALUES (%s, %s, %s)"
+                    cursor.execute(sql1, (item_name, float(item[4]), "HELD"))
+                    
+                    
+                    sql2 = "UPDATE inventory SET amount = amount - %s WHERE label = %s"
+                    cursor.execute(sql2, (1, item_name))
+                    
+                    db.commit()
+                
 
                 last_logged_time[item_name] = current_time
                 print(f"Database Updated: {item_name}")
+                
+                
             except mysql.connector.Error as e:
                 print(f"Logging error: {e}")
+                
+    for item_name, item in returned:
+        
+        try: 
+            cursor.execute("SELECT amount FROM inventory WHERE label = %s", (item_name,))
+            exists = cursor.fetchone()
+            
+            if exists:
+                sql1 = "DELETE FROM inventory WHERE label = %s LIMIT 1"
+                cursor.execute(sql1, (item_name))
+                
+                sql2 = "UPDATE inventory SET amount = amount + %s WHERE label = %s"
+                cursor.execute(sql2, (1, item_name))
+                
+                db.commit
+                
+                    
+        except mysql.connector.Error as e:
+            print(f"Logging error: {e}")
+                
                 
 
 def get_inputs(key, use_cameras, cap_width, curcap, caps, i):
