@@ -7,6 +7,8 @@ import ArmingHeader from './components/Arming-Header.js';
 import ArmingButton from './components/Arming-Button.js';
 
 function App() {
+  
+
   return (
     <div className="App">
       <div className = "Camera">

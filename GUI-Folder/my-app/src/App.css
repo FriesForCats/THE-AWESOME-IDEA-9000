@@ -86,3 +86,16 @@
   font-size: calc(10px + 2vmin);
   text-align: center;
 }
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f141a; /* Matches your dashboard color */
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden; /* Prevents side-scrolling */
+}
+
+#root {
+  height: 100%;
+  background-color: #0f141a;
+}
