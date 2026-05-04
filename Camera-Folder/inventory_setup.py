@@ -1,6 +1,5 @@
 import mysql.connector
 import sys
-import warnings
 
 # DATABASE CONNECTION 
 try:
@@ -67,6 +66,7 @@ def inv_setup(count):
                 print(f"Logging error: {e}")
         else: 
             inv_setup(0)
+            
             
 inv_setup(count)
                 

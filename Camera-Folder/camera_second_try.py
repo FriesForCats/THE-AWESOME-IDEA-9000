@@ -21,11 +21,18 @@ try:
         port=3306
     )
     cursor = db.cursor()
+    cursor.execute("TRUNCATE TABLE detection_logs")
+    sql = "INSERT INTO detection_logs (label, amount) SELECT label, 0 FROM inventory"
+    cursor.execute(sql)
+    db.commit()
     print("Successfully connected to the database!")
     
 except mysql.connector.Error as err:
     print(f"Database Connection Error: {err}")
     sys.exit()
+    
+
+
     
 # LOAD MODEL
 device = 'cuda' if torch.cuda.is_available() else 'cpu' # Using 'cuda' if you have an NVIDIA GPU, otherwise 'cpu'
@@ -152,8 +159,8 @@ def log_items(held_items, returned, cursor, db, last_logged_time, LOG_COOLDOWN):
                 exists = cursor.fetchone()
                 
                 if exists:
-                    sql1 = "INSERT INTO detection_logs (label, confidence, status) VALUES (%s, %s, %s)"
-                    cursor.execute(sql1, (item_name, float(item[4]), "HELD"))
+                    sql1 = "UPDATE detection_logs Set amount = amount + %s WHERE label = %s"
+                    cursor.execute(sql1, (1, item_name))
                     
                     
                     sql2 = "UPDATE inventory SET amount = amount - %s WHERE label = %s"
@@ -171,23 +178,24 @@ def log_items(held_items, returned, cursor, db, last_logged_time, LOG_COOLDOWN):
                 
     for item_name, item in returned:
         
-        try: 
-            cursor.execute("SELECT amount FROM inventory WHERE label = %s", (item_name,))
-            exists = cursor.fetchone()
-            
-            if exists:
-                sql1 = "DELETE FROM inventory WHERE label = %s LIMIT 1"
-                cursor.execute(sql1, (item_name))
+        if item_name not in last_logged_time or (current_time - last_logged_time[item_name] > LOG_COOLDOWN):
+            try: 
+                cursor.execute("SELECT amount FROM inventory WHERE label = %s", (item_name,))
+                exists = cursor.fetchone()
                 
-                sql2 = "UPDATE inventory SET amount = amount + %s WHERE label = %s"
-                cursor.execute(sql2, (1, item_name))
-                
-                db.commit
-                
+                if exists:
+                    sql1 = "UPDATE detection_logs SET amount = amount - %s WHERE label = %s"
+                    cursor.execute(sql1, (1, item_name))
                     
-        except mysql.connector.Error as e:
-            print(f"Logging error: {e}")
-                
+                    sql2 = "UPDATE inventory SET amount = amount + %s WHERE label = %s"
+                    cursor.execute(sql2, (1, item_name))
+                    
+                    db.commit()
+                    
+                        
+            except mysql.connector.Error as e:
+                print(f"Logging error: {e}")
+                    
                 
 
 def get_inputs(key, use_cameras, cap_width, curcap, caps, i):
