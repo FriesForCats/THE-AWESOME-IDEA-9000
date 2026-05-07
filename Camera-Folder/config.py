@@ -26,11 +26,13 @@ class Inventory(db.Model):
     label = db.Column(db.String(255), primary_key=True)
     amount = db.Column(db.Integer, default=0)
 
+#api route for the front end to pull recent detections
 @app.route('/logs', methods=['GET'])
 def get_logs():
     try:
         # Pulls the 3 most recent entries
         logs = Testing.query.order_by(Testing.id.desc()).limit(3).all()
+        #returning the pulled data from the detection database
         return jsonify([{
             "id": log.id,
             "label": log.label,
@@ -41,11 +43,13 @@ def get_logs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+#api route for the front end to pull the inventory
 @app.route('/api/inventory', methods=['GET'])
 def get_inventory():
     try:
-        # USE SQLALCHEMY instead of cursor.execute (Matches image_a7df5b.png logic)
+        #pulls the whole table for the inventory
         items = Inventory.query.all()
+        #sorting data from table
         inventory_data = [{"name": item.label, "stock": item.amount} for item in items]
         return jsonify(inventory_data), 200
     except Exception as e:
