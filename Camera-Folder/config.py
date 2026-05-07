@@ -11,7 +11,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Prevents unnecessary warn
 
 db = SQLAlchemy(app)
 
-# 1. LOGS MODEL 
+# logs table for detections (user's cart) 
 class Testing(db.Model):
     __tablename__ = 'detection_logs'
     id = db.Column(db.Integer, primary_key=True)
@@ -20,7 +20,7 @@ class Testing(db.Model):
     status = db.Column(db.String(50), nullable=True)
     timestamp = db.Column(db.DateTime, server_default=db.func.now())
 
-# 2. INVENTORY MODEL 
+# logs table for inventory 
 class Inventory(db.Model):
     __tablename__ = 'inventory'
     label = db.Column(db.String(255), primary_key=True)
