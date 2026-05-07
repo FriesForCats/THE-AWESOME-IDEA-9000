@@ -1,3 +1,9 @@
+
+/**
+ * Renders the fully assembled app using react
+ * by attaching it to the DOM
+ */
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

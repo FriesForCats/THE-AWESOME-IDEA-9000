@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react'; // Fixes undefined errors in image_a76ae3.png
+import React, { useState, useEffect } from 'react';
 
-// 1. The Item Component (Fixes the literal text issue in image_a7673a.png)
+// 1. The Item Component
+
 // We destructure { name, stock } from props to make the code cleaner.
+
 function Item({ name, stock }) {
     const isLowStock = stock < 5;
     return (
@@ -55,21 +57,18 @@ export default function InventoryList() {
 }, []);
 
     return (
-        <div className="Inventory-Container">
-            
-            <div className="Inventory-List">
-                {food.length > 0 ? (
-                    food.map((item, index) => (
-                        <Item 
-                            key={index} 
-                            name={item.name} 
-                            stock={item.stock} 
-                        />
-                    ))
-                ) : (
-                    <p>Loading inventory data...</p>
-                )}
-            </div>
-        </div>
+        <li className="Inventory-List">
+            {food.length > 0 ? (
+                food.map((item, index) => (
+                    <Item 
+                        key={index} 
+                        name={item.name} 
+                        stock={item.stock} 
+                    />
+                ))
+            ) : (
+                <p>Loading inventory data...</p>
+            )}
+        </li>
     );
 }

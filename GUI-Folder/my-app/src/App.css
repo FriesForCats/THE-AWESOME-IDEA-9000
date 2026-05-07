@@ -1,3 +1,10 @@
+
+/* 
+This document is where all of the major formatting is handled for
+each component of the GUI. We opted for this approach as to keep
+our main code cleaner and easier to understand.
+*/
+
 .App {
   display: grid;
   grid-template-columns: 3fr 1.5fr;
@@ -7,11 +14,14 @@
   height: 100vh;
   background-color: #282c34;
   color: white;
+  position: relative;
 }
 
 .Camera {
   grid-area: camera;
   border: 2px solid black;
+  position: relative;
+  padding: 100px;
 
   display: flex;
   align-items: center;
@@ -22,19 +32,29 @@
 }
 
 .Camera video {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
-  }
+}
 
 .Change-Camera {
+  position : absolute;
+  bottom: 0px;
+
   height: 75px;
   width: 75px;
+  background-color: black;
+  color: white;
   border : 1px solid white;
   padding: 10px;
   font-size: 12px;
-  align-self: end;
-  justify-self: end;
+  cursor: pointer;
+}
+
+.Shoppers-Header {
+  background-color: black;
+  font-size: calc(10px + 2vmin);
+  text-align: center;
 }
 
 .Current-Shoppers {
@@ -44,8 +64,9 @@
 
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
+  height: 100%;
+  overflow-y: auto;
+  min-width: 0;
 }
 
 .Shoppers {
@@ -55,6 +76,7 @@
 .Inventory-Header {
   background-color: black;
   font-size: calc(10px + 2vmin);
+  
 }
 
 .Inventory-List {
@@ -62,7 +84,9 @@
   border: 2px solid black;
   background-color: #4f535d;
 
-  display: flex;
+  overflow-y: auto;
+  max-height: 100%;
+  display: block;
   flex-direction: column;
   text-align: left;
   font-size: calc(10px + 2vmin);
@@ -82,20 +106,19 @@
   border: 2px solid black;
   background-color: #4f535d;
 
-  text-align: left;
   font-size: calc(10px + 2vmin);
   text-align: center;
 }
-html, body {
-  margin: 0;
-  padding: 0;
-  background-color: #0f141a; /* Matches your dashboard color */
-  height: 100%;
-  width: 100%;
-  overflow-x: hidden; /* Prevents side-scrolling */
+
+.Status-Indicator {
+  position : absolute;
+  left: 62%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
 }
 
-#root {
-  height: 100%;
-  background-color: #0f141a;
+.Status-Indicator img {
+  width: 100px;
+  height: auto;
 }
