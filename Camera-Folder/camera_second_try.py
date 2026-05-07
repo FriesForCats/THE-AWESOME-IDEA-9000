@@ -15,7 +15,7 @@ LOG_COOLDOWN = 10
 try:
     db = mysql.connector.connect(
         host="127.0.0.1",
-        user="root",
+        user="root", #hard coded creds
         password="password", # very secure password
         database="vision_project",
         port=3306
