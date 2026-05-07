@@ -54,7 +54,8 @@ Other:\
 ## How to Run
 1. Open your SQL database on the default port
 2. Run main.py
-3. Thats it!
+3. Input values into terminal when prompted
+4. Thats it!
 
 
 
