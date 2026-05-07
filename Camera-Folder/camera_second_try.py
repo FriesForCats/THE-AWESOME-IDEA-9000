@@ -21,6 +21,10 @@ try:
         port=3306
     )
     cursor = db.cursor()
+    
+    cursor.execute("TRUNCATE TABLE detection_logs") # deletes previous shopper cart
+    db.commit()
+    
     print("Successfully connected to the database!")
     
 except mysql.connector.Error as err:
@@ -76,12 +80,11 @@ def videoPlay():
     
         detections = detect(model, frame)
         
-        held_items, returned = check_pairs(detections, model, held_items)
+        held_items, added, returned = check_pairs(detections, model, held_items)
         
         img = draw(img, detections, model, color_map, held_items)
         
-        log_items(held_items, returned, cursor, db, last_logged_time, LOG_COOLDOWN)
-        
+        log_items(added, returned, cursor, db, last_logged_time, LOG_COOLDOWN)
             
         img = resize(img, cap_width)
         
@@ -167,15 +170,24 @@ def check_pairs(detections, model: object, prev_held: list):
     Returns:
         held_items: the list of items whose midpoints are enclosed in the person's box
         
+        added: the held_items list of the items still enclosed in the person's box minus the list from last frame
+        
         returned: the held_items list from last frame minus the items still enclosed in the person's box
     """
     
     
     held_items = []
-    returned = []
+    on_screen = []
     
     persons = [d for d in detections if model.names[int(d[5])] == "person"]
     items   = [d for d in detections if model.names[int(d[5])] != "person"]
+    
+    # for item in items:
+    #     item_name = model.names[int(item[5])]
+    #     on_screen.append((item_name, item))
+        
+    
+    
 
     # checks for items midpoints in person box
     for person in persons:
@@ -190,15 +202,60 @@ def check_pairs(detections, model: object, prev_held: list):
                 item_name = model.names[int(item[5])] 
                 held_items.append((item_name, item))
     
-    # checks for items no longer in person box
+    added, returned = add_and_return(prev_held, held_items)
+
+    return held_items, added, returned
+
+def add_and_return(prev_held: list, held_items: list):
+    """Creates lists of the items just on the current frame and the items just on the previous frame
+    
+    args:
+        prev_held: a list of held items from the previous frame
+    
+        held_items: a list of held items from the current frame
+        
+    returns:
+        added: a list of items only on the current frame
+        
+        returned: a list of items only on the current frame
+
+    """
+    
+    added = []
+    returned = []
+
+    prev_labels = []
+    current_labels = []
+    # all_labels = []
+    
+
+    # label lists
     for item_name, item in prev_held:
-        if item_name not in held_items:
-            returned.append((item_name, item,))
+        prev_labels.append(item_name)
 
-    return held_items, returned
+    for item_name, item in held_items:
+        current_labels.append(item_name)
+        
+    # for item_name, item in on_screen:
+    #     all_labels.append(item_name)
+
+    # returned items
+    for item_name, item in prev_held:
+        
+
+        if item_name not in current_labels: #and item_name in all_labels:
+            returned.append((item_name, item))
+
+    # added items
+    for item_name, item in held_items:
+
+        if item_name not in prev_labels:
+            added.append((item_name, item))
+    
+    return (added, returned)
 
 
-def log_items(held_items, returned, cursor, db, last_logged_time: dict, LOG_COOLDOWN: int):
+def log_items(added, returned, cursor, db, last_logged_time: dict, LOG_COOLDOWN: int):
     """Updates the current inventory in the database while also adding and subtracting from user's cart
     
     Args:
@@ -235,11 +292,11 @@ def log_items(held_items, returned, cursor, db, last_logged_time: dict, LOG_COOL
     current_time = time.time()
 
     # loops through each held item, logging it out of inventory and into user cart
-    for item_name, item in held_items:
+    for item_name, item in added:
         # print(f"Cart: {item_name}")
         
         
-        if item_name not in last_logged_time or (current_time - last_logged_time[item_name] > LOG_COOLDOWN): # checks if item has been recently logged
+        #if item_name not in last_logged_time or (current_time - last_logged_time[item_name] > LOG_COOLDOWN): # checks if item has been recently logged
             
 
             try:
@@ -254,10 +311,10 @@ def log_items(held_items, returned, cursor, db, last_logged_time: dict, LOG_COOL
                     sql2 = "UPDATE inventory SET amount = amount - %s WHERE label = %s" 
                     cursor.execute(sql2, (1,item_name)) # amount - 1  WHERE label = item_name
                     
-                    db.commit() # updates database with cursor executions
+                    # db.commit() # updates database with cursor executions
                 
 
-                last_logged_time[item_name] = current_time # sets last_logged_time for item
+                #last_logged_time[item_name] = current_time # sets last_logged_time for item
                 print(f"New {item_name} added to cart!")
                 
                 
@@ -266,22 +323,26 @@ def log_items(held_items, returned, cursor, db, last_logged_time: dict, LOG_COOL
     
     for item_name, item in returned:
         
-        try: 
-            cursor.execute("SELECT amount FROM inventory WHERE label = %s", (item_name,))
-            exists = cursor.fetchone()
-            
-            if exists:
-                sql1 = "DELETE FROM detection_logs WHERE label = %s LIMIT 1" # deletes a line from detection_logs when item taken from cart
-                cursor.execute(sql1, (item_name,))
+        #if item_name not in last_logged_time or (current_time - last_logged_time[item_name] > LOG_COOLDOWN): # checks if item has been recently logged
+        
+            try: 
+                cursor.execute("SELECT amount FROM inventory WHERE label = %s", (item_name,))
+                exists = cursor.fetchone()
                 
-                sql2 = "UPDATE inventory SET amount = amount + %s WHERE label = %s" # adds 1 to the amount of the item put back on shelf
-                cursor.execute(sql2, (1, item_name))
-                
-                db.commit()
-                
+                if exists:
+                    sql1 = "DELETE FROM detection_logs WHERE label = %s LIMIT 1" # deletes a line from detection_logs when item taken from cart
+                    cursor.execute(sql1, (item_name,))
                     
-        except mysql.connector.Error as e:
-            print(f"Logging error: {e}")
+                    sql2 = "UPDATE inventory SET amount = amount + %s WHERE label = %s" # adds 1 to the amount of the item put back on shelf
+                    cursor.execute(sql2, (1, item_name))
+                    
+                    # db.commit()
+    
+                        
+            except mysql.connector.Error as e:
+                print(f"Logging error: {e}")
+                
+    db.commit() 
                 
                 
 
